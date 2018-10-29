@@ -39,9 +39,9 @@ This C program reads CSV filse from a directory and exports a sorted CSV based o
 
 ## Algorithm
 
-In order to run simpleCSVsorter from the command line, the user must input the following:
+In order to run scannerCSVsorter from the command line, the user must input the following:
 
-`cat input.file | ./simpleCSVsorter -c header_to_sort_by > output.file`
+ ./sorter -c header_to_sort_by
 
 ### Required Parameters
 
@@ -58,6 +58,20 @@ In order to run simpleCSVsorter from the command line, the user must input the f
  `-d <inputDirectory>`: This tells the program where to search for CSV files. The program will fork into a child process each time it reaches a directory or a file. If this parameter is left out, the program will begin to search at its current directory.
  
  `-o <outputDirectory>`: This tells the program where to output sorted CSV files. If this is left out, the program will output CSV files in the same directory that they were found.
+ 
+ The parameters may be entered in any order as long as they are followed by valid arguments.
+ 
+ ie:
+ ```
+ ./scanner -c movie_title -o sortedFiles
+ 
+ ```
+ is equivalent to
+ 
+ ```
+  ./scanner -o sortedFiles -c movie_title 
+
+ ```
 
 ### Execution
 
