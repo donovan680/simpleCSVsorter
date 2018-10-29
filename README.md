@@ -1,5 +1,5 @@
-# simpleCSVsorter: C Program
-This C program reads a CSV file from the command line and exports a sorted CSV based on a given column
+# scannerCSVsorter: C Program
+This C program reads CSV filse from a directory and exports a sorted CSV based on a given column
 
 ## Required Files
 `simpleCSVsorter.h`: This file contains function prototype declarations used in `simpleCSVsorter.c`.
@@ -28,6 +28,14 @@ This C program reads a CSV file from the command line and exports a sorted CSV b
 
 `<errno.h>`: Used for errno variable
 
+`<getopt.h>`: Used for getopt()
+
+`<dirent.h>`: Used for opendir() and readdir()
+
+`<sys/mman.h>`: Used for mmap()
+
+`<sys/wait.h>`: Used for wait()
+
 
 ## Algorithm
 
@@ -45,15 +53,26 @@ In order to run simpleCSVsorter from the command line, the user must input the f
 
 `output.file`: This is where the sorted CSV file will be created.
 
+### Optional Parameters
+
+ `-d <inputDirectory>`: This tells the program where to search for CSV files. The program will fork into a child process each time it reaches a directory or a file. If this parameter is left out, the program will begin to search at its current directory.
+ 
+ `-o <outputDirectory>`: This tells the program where to output sorted CSV files. If this is left out, the program will output CSV files in the same directory that they were found.
+
 ### Execution
 
-Once the parameters have been entered correctly, the program will begin execution. The program will begin by loading the header names into `char *header[40]`. Since this is a string array of static size 40, the number of headers in the CSV must be less than or equal to 40. This global variable will be used as a reference when determining which column will be sorted.
+The program begins with a traversal through a directory. The program uses opendir() to create a directory stream of all the values inside of the current directory. The stream then increments through each value inside of the directory and creates a fork process for each. If the process is forked on a sub-directory, the function is ran recursively. If the process is forked on a file, it checks to see if the file is a valid .CSV file. If so, it is sorted and outputted in the proper location. The sorting is done as follows:
+
+
+The program will begin by loading the header names into `char *header[40]`. Since this is a string array of static size 40, the number of headers in the CSV must be less than or equal to 40. This global variable will be used as a reference when determining which column will be sorted.
 
 After loading the header array, the program will continue to read from the CSV file line by line. Once a line is read, it is stored as a string defined as `char string[10000]`. Therefore, the number of characters in each line must be less than or equal to 10000. Since each line represents a row in the CSV file, a new `Row` struct is created each time that a new line is read (see more about `struct Row` below). The string is then separated by commas, excluding those between double quotes `","`, and each substring will represent different column values of that row. These substrings are loaded into the `char* values[40]` array defined by the `Row` struct. The `Row` is then either linked to the previous `Row` or set to `Row * topRow` is `topRow==NULL`. 
 
 Once all lines of the CSV file have been read, the program has created a linked list of `Row` structs with each `Row` holding the string values of each column in that given row. At this point, the program will sort the linked list using mergesort on the `header_to_sort_by` values of each `Row`.
 
 With the linked list of `Row` structs now sorted by the given `header_to_sort_by` column, the program then prints the values of `header` followed by the column values listed in each `Row`. 
+
+This output stream is directed to a file defined by `<file-name>-sorted-<fieldname>.CSV`. 
 
 
 ## Structures
@@ -74,9 +93,25 @@ Each row is a linked list node which contains two fields:
 
 `struct _Row *next;`: This is a pointer to the next `Row`;
 
+### PIDLIST
+
+This structure was a global variable in shared memory for each of the processes. This is how the program keeps track of the number of child processes. 
+
+```
+typedef struct _PID {
+    int count;
+    pid_t list[300];
+} PIDLIST;
+
+```
+
 ## Functions
 
 ### Functions defined in `simpleCSVsorter.h`
+
+#### `void traverseDirectory(char *directoryName, char *header, PIDLIST *shmem, char outputDir[1000]);`
+
+This function is what traverses through each file and directory in the input stream. Each time it reaches another file or directory, a forked process is created to handle it. In each child process, this function is run recursively on sub-directories. 
 
 #### `Row * createRow(char* line);`
 
@@ -144,9 +179,19 @@ It is assumed that the CSV given has proper format. This means that each column 
 
 The largest difficulty was organizing the structure of the application. Linking the header files was difficult as there was circular dependency at first. This is why I chose to create `helper.h` so that I would not get duplicate symbol errors. In addition, there were many edge cases that I had to test for in order to make sure that the program was working.
 
+In our program, we take used the same basic structure as the last submission. We have a scannerCSVsorter.h which includes all the method definitions outside of main, a scannerCSVsorter.c which defines the main method, a mergesort.c which defines and implements our mergesort program, and a mergesort.h which defines the variables and methods we used. We broke apart each line of the CSV into a struct "Row" (defined in rowStruct.h) which holds the line data as well as a pointer to the next line. The program takes in the input through stdin and first checks to see the arguments given. Using the getopt() function (called from the handleArguments() method), we are able to check for 'c', 'o', and 'd' arguments. After determining the course of action from the arguments, our program breaks apart the file into the header and a linked list of struct Rows. We mergesort this linked list to created the sorted CSV which is outputted with the -sorted extension to the directory it was found in. This process is repeated for each directory (starting with the current directory which serves as a root) and a new child process with a unique pid is created for each csv found and sorted. The sorted files as well as the pids of the processes used to create them are the expected output of the program.
+
+We ran into some problems during our coding. We were not able to correctly increment some pointers, so we worked around this by passing in integers in their natural form. This actually helped improve the readability of the code as well. The biggest problem we encountered was having some processes start (and hence some unexpected PIDs outputted) when we did not want them to. We found that this was a result of the way the fork() function works. For every fork() call, a new stack of memory is created which can quickly lead to errors like the one we encountered. We fixed this by creating a custom create_shared_memory() function which utilizes the mmap() function in order to create a shared memory space for all forked processes to use. Once we implemented this, our program began outputting the expected child process details. We also had trouble getting the file to read in properly first, and then we remembered we had to "rewind" the stream in order to read in from the front of the file. There was an error we encountered where the files were not writing at all and this was due to us never closing the file stream at the end of our print to file methods. We ran into a problem in which our pidcount was altered by a hidden file, we fixed this by checking to see if a file starts with ".". In order to make sure our project runs even without a directory specified, we made sure to use the getcwd() function so that we can start the processes at the current file path.
+
 ### Testing Procedure
 
 In order to test, I utilzied the `movie_metadata.csv` file. Since this file was so large, I assumed that it contained many of the cases that the program would encounter in other CSV files. I sorted each column in the CSV and checked to see if it had sorted correctly. I also used printf() statements throughout my code to make sure that certain functions were being hit. 
 
+We tested multiple test cases: 
+
+  We checked to see if all the flag combinations work and create files in the correct specified (or if unspecified in the cwd)             directory.
+  We checked to see if the program correctly recognizes files as csv type files
+  We checked to see if the files that are recognized as csv files are correctly sorted
+  We checked with 5 levels of directories and subdirectories and checked to make sure each directory and file had a specific pid and was   forked.
 
 
