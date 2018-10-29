@@ -10,7 +10,7 @@ This C program reads CSV filse from a directory and exports a sorted CSV based o
 
 `mergesort.c`: This file contains library functions required for the sorting algorithm.
 
-`rowStruct.h` This file contains the `Row` struct used by `mergesort.c` and `simpleCSVsorter.c`
+`rowStruct.h` This file contains the `Row` and `PIDLIST`struct
 
 `Makefile`: This file contains build instructions for the compiler.
 
@@ -72,7 +72,19 @@ Once all lines of the CSV file have been read, the program has created a linked 
 
 With the linked list of `Row` structs now sorted by the given `header_to_sort_by` column, the program then prints the values of `header` followed by the column values listed in each `Row`. 
 
-This output stream is directed to a file defined by `<file-name>-sorted-<fieldname>.CSV`. 
+This output stream is directed to a file defined by `<file-name>-sorted-<fieldname>.CSV`.
+
+In STDOUT, following information is displayed:
+
+```
+Initial PID: 30719
+PIDS of all child processes: 30721,30722,30723,30724,30725,30726,30727
+Total number of processes: 7
+
+```
+The total number of processes is the number of times that the program created a forked process. 
+
+All statuses on each fork process are sent to a `console.log` file. This file gives a description of how the forked process handeled each file.
 
 
 ## Structures
