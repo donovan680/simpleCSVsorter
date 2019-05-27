@@ -1,4 +1,4 @@
-# scannerCSVsorter: C Program
+# CSVsorter: C Program
 This C program reads CSV filse from a directory and exports a sorted CSV based on a given column
 
 ## Required Files
