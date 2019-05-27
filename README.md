@@ -195,29 +195,4 @@ This function takes a `char*` as a parameter and returns 0: if the string is not
                                                  
 This is useful when comparing column values during the mergesort. If `strcmp` is used for numerical values, then `111` would be regarded as less that `22`. Therefore if a value is found to be numerical, the integer values are compared instead. 
 
-## Additional Information
-
-### Assumptions
-
-It is assumed that the CSV given has proper format. This means that each column in each row is separated by a single comma. The only time a comma can be included in a field is if it is surrounded by double quotes. In addition, it is assumed that the CSV will have less than 40 header entries. If there are more headers than this, the proram will break. Also, it is assumed that each line has less thatn 10,000 characters as this is the maximum string defined. 
-
-### Difficulties
-
-The largest difficulty was organizing the structure of the application. Linking the header files was difficult as there was circular dependency at first. This is why I chose to create `helper.h` so that I would not get duplicate symbol errors. In addition, there were many edge cases that I had to test for in order to make sure that the program was working.
-
-In our program, we take used the same basic structure as the last submission. We have a scannerCSVsorter.h which includes all the method definitions outside of main, a scannerCSVsorter.c which defines the main method, a mergesort.c which defines and implements our mergesort program, and a mergesort.h which defines the variables and methods we used. We broke apart each line of the CSV into a struct "Row" (defined in rowStruct.h) which holds the line data as well as a pointer to the next line. The program takes in the input through stdin and first checks to see the arguments given. Using the getopt() function (called from the handleArguments() method), we are able to check for 'c', 'o', and 'd' arguments. After determining the course of action from the arguments, our program breaks apart the file into the header and a linked list of struct Rows. We mergesort this linked list to created the sorted CSV which is outputted with the -sorted extension to the directory it was found in. This process is repeated for each directory (starting with the current directory which serves as a root) and a new child process with a unique pid is created for each csv found and sorted. The sorted files as well as the pids of the processes used to create them are the expected output of the program.
-
-We ran into some problems during our coding. We were not able to correctly increment some pointers, so we worked around this by passing in integers in their natural form. This actually helped improve the readability of the code as well. The biggest problem we encountered was having some processes start (and hence some unexpected PIDs outputted) when we did not want them to. We found that this was a result of the way the fork() function works. For every fork() call, a new stack of memory is created which can quickly lead to errors like the one we encountered. We fixed this by creating a custom create_shared_memory() function which utilizes the mmap() function in order to create a shared memory space for all forked processes to use. Once we implemented this, our program began outputting the expected child process details. We also had trouble getting the file to read in properly first, and then we remembered we had to "rewind" the stream in order to read in from the front of the file. There was an error we encountered where the files were not writing at all and this was due to us never closing the file stream at the end of our print to file methods. We ran into a problem in which our pidcount was altered by a hidden file, we fixed this by checking to see if a file starts with ".". In order to make sure our project runs even without a directory specified, we made sure to use the getcwd() function so that we can start the processes at the current file path.
-
-### Testing Procedure
-
-In order to test, I utilzied the `movie_metadata.csv` file. Since this file was so large, I assumed that it contained many of the cases that the program would encounter in other CSV files. I sorted each column in the CSV and checked to see if it had sorted correctly. I also used printf() statements throughout my code to make sure that certain functions were being hit. 
-
-We tested multiple test cases: 
-
-  We checked to see if all the flag combinations work and create files in the correct specified (or if unspecified in the cwd)             directory.
-  We checked to see if the program correctly recognizes files as csv type files
-  We checked to see if the files that are recognized as csv files are correctly sorted
-  We checked with 5 levels of directories and subdirectories and checked to make sure each directory and file had a specific pid and was   forked.
-
 
