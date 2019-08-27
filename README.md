@@ -41,7 +41,7 @@ This C program reads CSV filse from a directory and exports a sorted CSV based o
 
 In order to run scannerCSVsorter from the command line, the user must input the following:
 
- ./sorter -c header_to_sort_by
+ `./sorter -c header_to_sort_by`
 
 ### Required Parameters
 
@@ -141,7 +141,7 @@ This function is what traverses through each file and directory in the input str
 
 #### `Row * createRow(char* line);`
 
-This function takes a `char*` as a parameter and returns a pointer to a `Row` struct. The value of the `char*` parameter is an entire CSV file line. This parameter is passed down from the `insertRow` function defined below. In this function, a new `Row` struct is created. The `char*` is then split by `,` and each substring is loaded into the correct 
+The value of the `char*` parameter is an entire CSV file line. This parameter is passed down from the `insertRow` function defined below. In this function, a new `Row` struct is created. The `char*` is then split by `,` and each substring is loaded into the correct 
 `Row* newRow->values[columnNum]`. `columnNum = 0` initially and is incremented for each substring loaded. Therefore each `Row*->values[columnNum]` stays consistent with the corresponding `header[columnNum]` column name. A pointer to the newly created `Row` is then returned.
 
 #### `void insertRow(Row** topRow,char* line);`
